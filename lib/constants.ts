@@ -328,6 +328,42 @@ export const POPULAR_STOCK_SYMBOLS = [
 export const NO_MARKET_NEWS =
     '<p class="mobile-text" style="margin:0 0 20px 0;font-size:16px;line-height:1.6;color:#4b5563;">No market news available today. Please check back tomorrow.</p>';
 
+export const POPULAR_A_SHARE_SYMBOLS = [
+    // 白酒 (Baijiu)
+    '600519', // 贵州茅台
+    '000858', // 五粮液
+
+    // 银行 (Banks)
+    '601398', // 工商银行
+    '601939', // 建设银行
+    '601288', // 农业银行
+    '600036', // 招商银行
+
+    // 科技 (Technology)
+    '000063', // 中兴通讯
+    '002415', // 海康威视
+    '600276', // 恒瑞医药
+
+    // 新能源 (New Energy)
+    '300750', // 宁德时代
+    '002594', // 比亚迪
+    '601012', // 隆基绿能
+
+    // 保险 (Insurance)
+    '601318', // 中国平安
+
+    // 证券 (Securities)
+    '600030', // 中信证券
+    '601688', // 华泰证券
+
+    // 地产 (Real Estate)
+    '000002', // 万科A
+
+    // 能源 (Energy)
+    '600028', // 中国石化
+    '601857', // 中国石油
+];
+
 export const WATCHLIST_TABLE_HEADER = [
     'Company',
     'Symbol',

@@ -31,7 +31,18 @@
 | `NEXT_PUBLIC_FINNHUB_API_KEY` | 是 | Finnhub API Key (免费注册: https://finnhub.io/) |
 | `FINNHUB_BASE_URL` | 否 | Finnhub API 地址 |
 
-### 1.5 AI 提供商 (可选)
+### 1.5 市场数据提供商 (可选)
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `SSE_PROVIDER` | `sina` | 上海证券交易所数据提供商 |
+| `SSE_FALLBACK_PROVIDER` | `tencent` | SSE 备选提供商 |
+| `SZSE_PROVIDER` | `sina` | 深圳证券交易所数据提供商 |
+| `SZSE_FALLBACK_PROVIDER` | `tencent` | SZSE 备选提供商 |
+| `US_PROVIDER` | `finnhub` | 美股数据提供商 |
+| `SINA_BASE_URL` | `http://hq.sinajs.cn/list=` | Sina API 基础地址 |
+
+### 1.6 AI 提供商 (可选)
 
 | 变量名 | 说明 |
 |--------|------|
@@ -40,20 +51,20 @@
 | `MINIMAX_API_KEY` | Minimax API Key |
 | `SIRAY_API_KEY` | Siray API Key |
 
-### 1.6 后台任务 (可选)
+### 1.7 后台任务 (可选)
 
 | 变量名 | 说明 |
 |--------|------|
 | `INNGEST_SIGNING_KEY` | Inngest 签名密钥 |
 
-### 1.7 邮件 (可选)
+### 1.8 邮件 (可选)
 
 | 变量名 | 说明 |
 |--------|------|
 | `NODEMAILER_EMAIL` | Gmail 地址 |
 | `NODEMAILER_PASSWORD` | Gmail 应用密码 |
 
-### 1.8 情感分析 (可选)
+### 1.9 情感分析 (可选)
 
 | 变量名 | 说明 |
 |--------|------|

@@ -77,6 +77,7 @@ export default function WatchlistTable({ data, userId, onRefresh }: WatchlistTab
                     <tr>
                         <th className="px-6 py-4 font-semibold tracking-wide">Company</th>
                         <th className="px-6 py-4 font-semibold tracking-wide">Symbol</th>
+                        <th className="px-6 py-4 font-semibold tracking-wide">Market</th>
                         <th className="px-6 py-4 font-semibold tracking-wide">Price</th>
                         <th className="px-6 py-4 font-semibold tracking-wide">Change</th>
                         <th className="px-6 py-4 font-semibold tracking-wide">Market Cap</th>
@@ -114,8 +115,16 @@ export default function WatchlistTable({ data, userId, onRefresh }: WatchlistTab
                                         {stock.symbol}
                                     </span>
                                 </td>
+                                <td className="px-6 py-4">
+                                    <span className="text-xs font-medium">
+                                        {stock.market === 'US' && '🇺🇸'}
+                                        {stock.market === 'SSE' && '🇨🇳SSE'}
+                                        {stock.market === 'SZSE' && '🇨🇳SZ'}
+                                        {!stock.market && '🇺🇸'}
+                                    </span>
+                                </td>
                                 <td className="px-6 py-4 text-white font-medium text-base tracking-tight">
-                                    {formatCurrency(stock.price)}
+                                    {formatCurrency(stock.price, stock.market)}
                                 </td>
                                 <td className={`px-6 py-4 font-medium`}>
                                     <div className={`flex items-center w-fit px-2 py-1 rounded-md ${isPositive ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}>

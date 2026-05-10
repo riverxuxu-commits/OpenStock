@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import WatchlistStockChip from './WatchlistStockChip';
 import TradingViewWatchlist from './TradingViewWatchlist';
 import { Button } from '@/components/ui/button';
@@ -8,12 +9,22 @@ import { ArrowDownAZ, ArrowUpZA, ArrowUpDown } from 'lucide-react';
 import { WatchlistItem } from '@/database/models/watchlist.model';
 
 interface WatchlistManagerProps {
-    initialItems: WatchlistItem[]; // Using the DB model type directly or a simplified version
+    initialItems: WatchlistItem[];
     userId: string;
+    initialTab?: string;
 }
 
-export default function WatchlistManager({ initialItems, userId }: WatchlistManagerProps) {
-    // Sort state: 'asc' (A-Z), 'desc' (Z-A), or null (added order/default)
+const TABS = [
+    { key: 'all', label: 'All' },
+    { key: 'us', label: 'US' },
+    { key: 'ashare', label: 'A股' },
+];
+
+export default function WatchlistManager({ initialItems, userId, initialTab = 'all' }: WatchlistManagerProps) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const activeTab = searchParams?.get('tab') || initialTab;
+
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
     const toggleSort = () => {
@@ -24,7 +35,6 @@ export default function WatchlistManager({ initialItems, userId }: WatchlistMana
 
     const sortedItems = useMemo(() => {
         if (!sortOrder) return initialItems;
-
         return [...initialItems].sort((a, b) => {
             if (sortOrder === 'asc') {
                 return a.symbol.localeCompare(b.symbol);
@@ -34,10 +44,39 @@ export default function WatchlistManager({ initialItems, userId }: WatchlistMana
         });
     }, [initialItems, sortOrder]);
 
+    const handleTabChange = useCallback((tab: string) => {
+        const params = new URLSearchParams(searchParams?.toString() || '');
+        if (tab === 'all') {
+            params.delete('tab');
+        } else {
+            params.set('tab', tab);
+        }
+        const query = params.toString();
+        router.push(query ? `/watchlist?${query}` : '/watchlist');
+    }, [router, searchParams]);
+
     const watchlistSymbols = sortedItems.map((item) => item.symbol);
 
     return (
         <div className="space-y-6">
+            {/* Tab Bar */}
+            <div className="flex items-center space-x-1 bg-gray-900/50 rounded-lg p-1 border border-gray-800 w-fit">
+                {TABS.map((t) => (
+                    <button
+                        key={t.key}
+                        onClick={() => handleTabChange(t.key)}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                            activeTab === t.key
+                                ? 'bg-white/10 text-white'
+                                : 'text-gray-400 hover:text-gray-200'
+                        }`}
+                    >
+                        {t.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Chip Section */}
             <div className="bg-gray-900/30 rounded-xl border border-gray-800 p-4 backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center">
@@ -76,14 +115,18 @@ export default function WatchlistManager({ initialItems, userId }: WatchlistMana
                     <div className="flex flex-wrap gap-2">
                         {sortedItems.map((item) => (
                             <WatchlistStockChip
-                                key={item.symbol}
+                                key={`${item.symbol}-${item.market || 'US'}`}
                                 symbol={item.symbol}
                                 userId={userId}
                             />
                         ))}
                     </div>
                 ) : (
-                    <p className="text-sm text-gray-500 italic">No stocks in watchlist.</p>
+                    <p className="text-sm text-gray-500 italic">
+                        {activeTab === 'ashare'
+                            ? 'No A-share stocks yet — add A-share codes above.'
+                            : 'No stocks in watchlist.'}
+                    </p>
                 )}
             </div>
 

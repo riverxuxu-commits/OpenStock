@@ -7,6 +7,19 @@ import {Loader2,  TrendingUp} from "lucide-react";
 import Link from "next/link";
 import {searchStocks} from "@/lib/actions/finnhub.actions";
 import {useDebounce} from "@/hooks/useDebounce";
+import {detectMarket} from "@/lib/utils";
+
+function isAShareCode(input: string): boolean {
+    return /^\d{6}$/.test(input.trim());
+}
+
+function getMarketLabel(market: Market): string {
+    switch (market) {
+        case 'SSE': return 'SSE (上海)';
+        case 'SZSE': return 'SZSE (深圳)';
+        default: return market;
+    }
+}
 
 export default function SearchCommand({ renderAs = 'button', label = 'Add stock', initialStocks }: SearchCommandProps) {
     const [open, setOpen] = useState(false)
@@ -29,12 +42,26 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
     }, [])
 
     const handleSearch = async () => {
-        if(!isSearchMode) return setStocks(initialStocks);
+        const trimmed = searchTerm.trim();
+        if (!trimmed) return setStocks(initialStocks);
 
         setLoading(true)
         try {
-            const results = await searchStocks(searchTerm.trim());
-            setStocks(results);
+            // Detect A-share 6-digit code
+            if (isAShareCode(trimmed)) {
+                const market = detectMarket(trimmed);
+                const label = getMarketLabel(market);
+                setStocks([{
+                    symbol: trimmed,
+                    name: `${trimmed} (${label})`,
+                    exchange: market,
+                    type: 'Stock',
+                    isInWatchlist: false,
+                }]);
+            } else {
+                const results = await searchStocks(trimmed);
+                setStocks(results);
+            }
         } catch {
             setStocks([])
         } finally {
@@ -71,7 +98,7 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
             )}
             <CommandDialog open={open} onOpenChange={setOpen} className="search-dialog">
                 <div className="search-field">
-                    <CommandInput value={searchTerm} onValueChange={setSearchTerm} placeholder="Search stocks..." className="search-input" />
+                    <CommandInput value={searchTerm} onValueChange={setSearchTerm} placeholder="Search stocks or enter A-share code..." className="search-input" />
                     {loading && <Loader2 className="search-loader" />}
                 </div>
                 <CommandList className="search-list">
@@ -87,26 +114,29 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
                                 {isSearchMode ? 'Search results' : 'Popular stocks'}
                                 {` `}({displayStocks?.length || 0})
                             </div>
-                            {displayStocks?.map((stock, i) => (
-                                <li key={stock.symbol} className="search-item">
-                                    <Link
-                                        href={`/stocks/${stock.symbol}`}
-                                        onClick={handleSelectStock}
-                                        className="search-item-link"
-                                    >
-                                        <TrendingUp className="h-4 w-4 text-gray-500" />
-                                        <div  className="flex-1">
-                                            <div className="search-item-name">
-                                                {stock.name}
+                            {displayStocks?.map((stock) => {
+                                const market = isAShareCode(stock.symbol) ? detectMarket(stock.symbol) : 'US';
+                                return (
+                                    <li key={stock.symbol} className="search-item">
+                                        <Link
+                                            href={`/stocks/${stock.symbol}`}
+                                            onClick={handleSelectStock}
+                                            className="search-item-link"
+                                        >
+                                            <TrendingUp className="h-4 w-4 text-gray-500" />
+                                            <div className="flex-1">
+                                                <div className="search-item-name">
+                                                    {stock.name}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {stock.symbol}
+                                                    {market !== 'US' ? ` | ${getMarketLabel(market)}` : ` | ${stock.exchange} | ${stock.type}`}
+                                                </div>
                                             </div>
-                                            <div className="text-sm text-gray-500">
-                                                {stock.symbol} | {stock.exchange } | {stock.type}
-                                            </div>
-                                        </div>
-
-                                    </Link>
-                                </li>
-                            ))}
+                                        </Link>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     )
                     }

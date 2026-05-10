@@ -3,19 +3,32 @@
 import { connectToDatabase } from '@/database/mongoose';
 import { Watchlist } from '@/database/models/watchlist.model';
 import { revalidatePath } from 'next/cache';
+import { getWatchlistQuotes as getMarketQuotes } from '@/lib/market';
 
 // -- CRUD Operations --
 
-export async function addToWatchlist(userId: string, symbol: string, company: string) {
+export async function addToWatchlist(userId: string, symbol: string, company: string, market: Market = 'US') {
     try {
         await connectToDatabase();
 
-        // Upsert to avoid duplicates/errors if it already exists
+        const upperSymbol = symbol.toUpperCase();
+
+        // Backward compat: update legacy items without market field, or upsert new
+        const existing = await Watchlist.findOne({ userId, symbol: upperSymbol, market: { $exists: false } });
+        if (existing) {
+            existing.market = market;
+            existing.company = company;
+            await existing.save();
+            revalidatePath('/watchlist');
+            return JSON.parse(JSON.stringify(existing));
+        }
+
         const newItem = await Watchlist.findOneAndUpdate(
-            { userId, symbol: symbol.toUpperCase() },
+            { userId, symbol: upperSymbol, market },
             {
                 userId,
-                symbol: symbol.toUpperCase(),
+                symbol: upperSymbol,
+                market,
                 company,
                 addedAt: new Date()
             },
@@ -30,12 +43,14 @@ export async function addToWatchlist(userId: string, symbol: string, company: st
     }
 }
 
-export async function removeFromWatchlist(userId: string, symbol: string) {
+export async function removeFromWatchlist(userId: string, symbol: string, market?: Market) {
     try {
         await connectToDatabase();
-        await Watchlist.findOneAndDelete({ userId, symbol: symbol.toUpperCase() });
+        const filter: Record<string, unknown> = { userId, symbol: symbol.toUpperCase() };
+        if (market) filter.market = market;
+        await Watchlist.findOneAndDelete(filter);
         revalidatePath('/watchlist');
-        revalidatePath('/'); // In case it's used elsewhere
+        revalidatePath('/');
         return { success: true };
     } catch (error) {
         console.error('Error removing from watchlist:', error);
@@ -43,10 +58,12 @@ export async function removeFromWatchlist(userId: string, symbol: string) {
     }
 }
 
-export async function getUserWatchlist(userId: string) {
+export async function getUserWatchlist(userId: string, market?: Market) {
     try {
         await connectToDatabase();
-        const watchlist = await Watchlist.find({ userId }).sort({ addedAt: -1 });
+        const filter: Record<string, unknown> = { userId };
+        if (market) filter.market = market;
+        const watchlist = await Watchlist.find(filter).sort({ addedAt: -1 });
         return JSON.parse(JSON.stringify(watchlist));
     } catch (error) {
         console.error('Error fetching watchlist:', error);
@@ -54,15 +71,57 @@ export async function getUserWatchlist(userId: string) {
     }
 }
 
-// Check if a symbol is in the user's watchlist
-export async function isStockInWatchlist(userId: string, symbol: string) {
+export async function getUserWatchlistByTab(userId: string, tab: string) {
     try {
         await connectToDatabase();
-        const item = await Watchlist.findOne({ userId, symbol: symbol.toUpperCase() });
+        const filter: Record<string, unknown> = { userId };
+
+        if (tab === 'us') {
+            filter.market = 'US';
+        } else if (tab === 'ashare') {
+            filter.market = { $in: ['SSE', 'SZSE'] };
+        }
+
+        const watchlist = await Watchlist.find(filter).sort({ addedAt: -1 });
+        return JSON.parse(JSON.stringify(watchlist));
+    } catch (error) {
+        console.error('Error fetching watchlist by tab:', error);
+        return [];
+    }
+}
+
+// Check if a symbol is in the user's watchlist
+export async function isStockInWatchlist(userId: string, symbol: string, market?: Market) {
+    try {
+        await connectToDatabase();
+        const filter: Record<string, unknown> = { userId, symbol: symbol.toUpperCase() };
+        if (market) filter.market = market;
+        const item = await Watchlist.findOne(filter);
         return !!item;
     } catch (error) {
         console.error('Error checking watchlist status:', error);
         return false;
+    }
+}
+
+// -- Market-aware quote fetching --
+
+export async function getWatchlistQuotes(userId: string, tab: string = 'all') {
+    try {
+        const items = await getUserWatchlistByTab(userId, tab);
+        if (!items || items.length === 0) return [];
+
+        const quotes = await getMarketQuotes(
+            items.map((item: { symbol: string; market: Market }) => ({
+                symbol: item.symbol,
+                market: item.market,
+            }))
+        );
+
+        return quotes;
+    } catch (error) {
+        console.error('Error fetching watchlist quotes:', error);
+        return [];
     }
 }
 

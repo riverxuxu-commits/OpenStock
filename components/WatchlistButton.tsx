@@ -9,7 +9,8 @@ interface WatchlistButtonProps {
     isInWatchlist: boolean;
     showTrashIcon?: boolean;
     type?: "button" | "icon";
-    userId?: string; // Made optional for backward compat, but required for actions
+    userId?: string;
+    market?: Market;
     onWatchlistChange?: (symbol: string, added: boolean) => void;
 }
 
@@ -20,6 +21,7 @@ const WatchlistButton = ({
     showTrashIcon = false,
     type = "button",
     userId,
+    market = 'US',
     onWatchlistChange,
 }: WatchlistButtonProps) => {
     const [added, setAdded] = useState<boolean>(!!isInWatchlist);
@@ -46,10 +48,10 @@ const WatchlistButton = ({
         try {
             if (userId) {
                 if (next) {
-                    await addToWatchlist(userId, symbol, company);
+                    await addToWatchlist(userId, symbol, company, market);
                     toast.success(`${symbol} added to watchlist`);
                 } else {
-                    await removeFromWatchlist(userId, symbol);
+                    await removeFromWatchlist(userId, symbol, market);
                     toast.success(`${symbol} removed from watchlist`);
                 }
             }

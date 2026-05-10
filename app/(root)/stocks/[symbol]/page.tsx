@@ -14,11 +14,12 @@ import { auth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
 import { isStockInWatchlist } from '@/lib/actions/watchlist.actions';
 import { getStockSentimentInsights } from '@/lib/actions/adanos.actions';
-import { formatSymbolForTradingView } from '@/lib/utils';
+import { formatSymbolForTradingView, detectMarket } from '@/lib/utils';
 
 export default async function StockDetails({ params }: StockDetailsPageProps) {
     const { symbol } = await params;
-    const tvSymbol = formatSymbolForTradingView(symbol);
+    const market = detectMarket(symbol);
+    const tvSymbol = formatSymbolForTradingView(symbol, market);
     const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
 
     const session = await auth.api.getSession({
@@ -66,6 +67,7 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
                             company={symbol.toUpperCase()}
                             isInWatchlist={isInWatchlist}
                             userId={userId}
+                            market={market}
                         />
                     </div>
 

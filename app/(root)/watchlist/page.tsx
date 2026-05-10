@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import { auth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getUserWatchlist } from '@/lib/actions/watchlist.actions';
+import { getUserWatchlistByTab } from '@/lib/actions/watchlist.actions';
 import { getUserAlerts } from '@/lib/actions/alert.actions';
 import { getNews } from '@/lib/actions/finnhub.actions';
 import WatchlistManager from '@/components/watchlist/WatchlistManager';
@@ -11,7 +11,12 @@ import NewsGrid from '@/components/watchlist/NewsGrid';
 import SearchCommand from '@/components/SearchCommand';
 import { Loader2 } from 'lucide-react';
 
-export default async function WatchlistPage() {
+export default async function WatchlistPage(props: {
+    searchParams?: Promise<{ tab?: string }>;
+}) {
+    const searchParams = await props.searchParams;
+    const tab = searchParams?.tab || 'all';
+
     const session = await auth.api.getSession({
         headers: await headers()
     });
@@ -24,9 +29,9 @@ export default async function WatchlistPage() {
 
     // Parallel data fetching
     const [watchlistItems, alerts, news] = await Promise.all([
-        getUserWatchlist(userId),
+        getUserWatchlistByTab(userId, tab),
         getUserAlerts(userId),
-        getNews() // Initial news fetch
+        getNews()
     ]);
 
     const watchlistSymbols = watchlistItems.map((item: any) => item.symbol);
@@ -53,7 +58,9 @@ export default async function WatchlistPage() {
                 {/* Main Content - Watchlist Table */}
                 <div className="lg:col-span-3 space-y-8">
                     <div className="space-y-6">
-                        <WatchlistManager initialItems={watchlistItems} userId={userId} />
+                        <Suspense fallback={<div className="flex justify-center p-4"><Loader2 className="animate-spin text-gray-500" /></div>}>
+                            <WatchlistManager initialItems={watchlistItems} userId={userId} initialTab={tab} />
+                        </Suspense>
                     </div>
 
                     {/* News Section */}

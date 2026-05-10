@@ -108,7 +108,21 @@ export const getChangeColorClass = (changePercent?: number) => {
     return changePercent > 0 ? 'text-green-500' : 'text-red-500';
 };
 
-export const formatPrice = (price: number) => {
+export function detectMarket(symbol: string): Market {
+    if (/^\d{6}$/.test(symbol)) {
+        return symbol.startsWith('6') ? 'SSE' : 'SZSE';
+    }
+    return 'US';
+}
+
+export const formatPrice = (price: number, market?: Market) => {
+    if (market && market !== 'US') {
+        return new Intl.NumberFormat('zh-CN', {
+            style: 'currency',
+            currency: 'CNY',
+            minimumFractionDigits: 2,
+        }).format(price);
+    }
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
@@ -154,24 +168,30 @@ export const getFormattedTodayDate = () => new Date().toLocaleDateString('en-US'
     timeZone: 'UTC',
 });
 
-export function formatSymbolForTradingView(symbol: string): string {
+export function formatSymbolForTradingView(symbol: string, market?: Market): string {
     if (!symbol) return '';
     const upperSymbol = symbol.toUpperCase();
-    
-    // Shanghai
+
+    if (market === 'SSE') {
+        return `SSE:${upperSymbol}`;
+    }
+
+    if (market === 'SZSE') {
+        return `SZSE:${upperSymbol}`;
+    }
+
+    // Legacy suffix-based detection (backward compat)
     if (upperSymbol.endsWith('.SS')) {
         return `SSE:${upperSymbol.slice(0, -3)}`;
     }
-    
-    // Shenzhen
+
     if (upperSymbol.endsWith('.SZ')) {
         return `SZSE:${upperSymbol.slice(0, -3)}`;
     }
-    
-    // Hong Kong
+
     if (upperSymbol.endsWith('.HK')) {
         return `HKEX:${upperSymbol.slice(0, -3)}`;
     }
-    
+
     return upperSymbol;
 }

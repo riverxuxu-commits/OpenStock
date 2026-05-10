@@ -108,6 +108,7 @@ declare global {
         isInWatchlist: boolean;
         showTrashIcon?: boolean;
         type?: 'button' | 'icon';
+        market?: Market;
         onWatchlistChange?: (symbol: string, isAdded: boolean) => void;
     };
 
@@ -151,6 +152,23 @@ declare global {
     type AlertsListProps = {
         alertData: Alert[] | undefined;
     };
+
+    type Market = 'US' | 'SSE' | 'SZSE' | 'HKEX';
+
+    interface Quote {
+        symbol: string;
+        price: number;
+        change: number;
+        changePercent: number;
+        currency: string;
+        market: Market;
+    }
+
+    interface MarketProviderConfig {
+        name: string;
+        apiKey: string;
+        baseUrl: string;
+    }
 
     type MarketNewsArticle = {
         id: number;

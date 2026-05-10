@@ -46,6 +46,7 @@ export async function getCompanyProfile(symbol: string) {
     }
 }
 
+// US-market specific watchlist data (Finnhub)
 export async function getWatchlistData(symbols: string[]) {
     if (!symbols || symbols.length === 0) return [];
 
